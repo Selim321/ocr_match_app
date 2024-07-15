@@ -51,8 +51,34 @@ def split_and_match(word: str, words_list: List[str], threshold: float = 0.3, n:
                         break
     return matches
 
+def match_word_with_matches(word, matches, n=2):
+    filtered_matches = []
+    jaccard_threshold = 0.5
+    n_grams_word = generate_ngrams(normalize(word), n)
+
+    for match in matches:
+      n_grams_match = generate_ngrams(normalize(match), n)
+      score = jaccard_similarity(n_grams_word, n_grams_match)
+      if score >= jaccard_threshold:
+        filtered_matches.append(match)
+
+    # Sort the matches by score in ascending order
+    filtered_matches.sort(key=lambda x: x[1])
+
+    # Return the list of matches
+    return filtered_matches
+
+
+
 def check_match(scanned_name: str, product_name: str, alternate_names: List[str], threshold: float = 0.3, n: int = 2) -> Tuple[bool, List[str]]:
     """Check if the scanned name matches the product name or any of the alternate names."""
     words_list = [product_name] + alternate_names
     matches = split_and_match(scanned_name, words_list, threshold, n)
-    return bool(matches), matches
+
+    # Filter only if more than one match
+    if len(matches)>1:
+        matched_products = match_word_with_matches(scanned_name, matches)
+    else:
+        matched_products = matches
+
+    return bool(matched_products), matched_products
